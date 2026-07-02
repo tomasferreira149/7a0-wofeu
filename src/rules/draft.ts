@@ -33,3 +33,4 @@ export function validateRerollOptions(
 
   return { canChangeTeam, canChangeTournament };
 }
+

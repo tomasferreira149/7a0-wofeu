@@ -74,3 +74,4 @@ export function runLiveSimulation(teamA: SelectedTeam, teamB: SelectedTeam): Mat
 
   return match;
 }
+

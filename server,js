@@ -77,4 +77,9 @@ socket.on("iniciar_torneio_manual", async ({ salaCodigo, torneioNome }) => {
 });
 
 
-httpServer.listen(3001, () => console.log("Servidor de Jogo 5v5 rodando na porta 3001"));
+// O Number() converte o texto do Railway num número real
+const PORT = Number(process.env.PORT) || 3001;
+
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor de Jogo 5v5 rodando na porta ${PORT}`);
+});
