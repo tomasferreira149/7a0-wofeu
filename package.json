@@ -1,0 +1,29 @@
+{
+  "name": "7a0-futsal-game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@types/socket.io": "^3.0.1",
+    "prisma": "^5.22.0",
+    "typescript": "^6.0.3"
+  }
+}

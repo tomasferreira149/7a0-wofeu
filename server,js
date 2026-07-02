@@ -1,0 +1,80 @@
+import { Server } from "socket.io";
+import { createServer } from "http";
+import { runLiveSimulation } from "./src/engine/simulator.js"; // Importe a lógica que criamos
+import { PrismaClient } from '@prisma/client'; // ADICIONE ESTA LINHA
+import { iniciarTorneio, registrarFimDeJogo } from "./src/chaveamento.js";
+
+const prisma = new PrismaClient();
+
+const httpServer = createServer();
+const io = new Server(httpServer, {
+  cors: { origin: "*" } // Ajuste para o domínio do seu frontend
+});
+
+const salas = new Map(); // Armazena o estado das salas
+
+io.on("connection", (socket) => {
+  console.log("Amigo conectado:", socket.id);
+
+  socket.on("entrar_sala", (salaId) => {
+    socket.join(salaId);
+    console.log(`Amigo entrou na sala: ${salaId}`);
+  });
+
+  // Exemplo de quando a sala atinge o limite e o torneio deve começar:
+socket.on("iniciar_torneio_manual", async ({ salaCodigo, torneioNome }) => {
+  const sala = salas.get(salaCodigo);
+  
+  if (sala) {
+    // Pegamos a lista de IDs dos amigos que estão na sala
+    const amigosIds = sala.jogadores.map((j: any) => j.id);
+
+    try {
+      // Chamamos a função do nosso arquivo chaveamento.ts!
+      const novoTorneio = await iniciarTorneio(torneioNome, amigosIds);
+      
+      // Avisamos a todos os envolvidos via Socket.io que as chaves foram geradas
+      io.to(salaCodigo).emit("torneio_gerado", novoTorneio);
+    } catch (error) {
+      console.error("Erro ao criar o chaveamento no banco:", error);
+    }
+  }
+});
+
+  socket.on("iniciar_partida", async ({ salaId, times, partidaId }) => {
+    // 1. Executa a simulação completa no motor do jogo
+    const resultado = runLiveSimulation(times.a, times.b);
+    
+    // NOVO: Descobre quem foi o vencedor
+    let vencedorId = null;
+    if (resultado.scoreA > resultado.scoreB) {
+      vencedorId = times.a.id; // Time A ganhou
+    } else if (resultado.scoreB > resultado.scoreA) {
+      vencedorId = times.b.id; // Time B ganhou
+    } // Se for empate, fica null (podemos adicionar lógica de penáltis mais tarde)
+
+    // NOVO: O PASSO 3 ENTRA AQUI! Guarda o resultado no PostgreSQL
+    try {
+      if (partidaId) { // Só guarda se tivermos o ID da partida
+        await registrarFimDeJogo(partidaId, resultado.scoreA, resultado.scoreB, vencedorId);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar resultado final no banco:", error);
+    }
+
+    // 2. Transmite a partida minuto a minuto para a tela dos jogadores
+    resultado.logs.forEach((log, index) => {
+      setTimeout(() => {
+        io.to(salaId).emit("tick_partida", {
+          minuto: index + 1,
+          novoLog: log,
+          placarA: resultado.scoreA, 
+          placarB: resultado.scoreB
+        });
+      }, index * 1500); 
+    });
+  });
+});
+
+
+httpServer.listen(3001, () => console.log("Servidor de Jogo 5v5 rodando na porta 3001"));

@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Amigo {
+  id      String            @id @default(uuid())
+  nome    String
+  salas   SalaMultiplayer[]
+}
+
+model Torneio {
+  id          String         @id @default(uuid())
+  nome        String
+  cartas      CartaTorneio[]
+  partidas    Partida[]
+  chaveamento Chaveamento?
+}
+
+model CartaTorneio {
+  id        String  @id @default(uuid())
+  nome      String
+  posicao   String  // GK, CB, CM, CF
+  overall   Int
+  torneioId String
+  torneio   Torneio @relation(fields: [torneioId], references: [id])
+}
+
+model SalaMultiplayer {
+  id      String @id @default(uuid())
+  codigo  String @unique
+  amigoId String
+  amigo   Amigo  @relation(fields: [amigoId], references: [id])
+}
+
+model Chaveamento {
+  id        String    @id @default(uuid())
+  torneioId String    @unique
+  torneio   Torneio   @relation(fields: [torneioId], references: [id])
+  partidas  Partida[]
+}
+
+model Partida {
+  id            String      @id @default(uuid())
+  torneioId     String
+  torneio       Torneio     @relation(fields: [torneioId], references: [id])
+  timeA_Id      String?     // Pode ser null até o time ser definido na fase seguinte
+  timeB_Id      String?
+  golsTimeA     Int         @default(0)
+  golsTimeB     Int         @default(0)
+  vencedorId    String?
+  fase          String      // Oitavas, Quartas, Semis, Final
+  chaveamentoId String
+  chaveamento   Chaveamento @relation(fields: [chaveamentoId], references: [id])
+}
